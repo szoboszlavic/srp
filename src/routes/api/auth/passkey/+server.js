@@ -21,13 +21,21 @@ export async function GET({ locals }) {
 }
 
 // POST - начать регистрацию нового passkey
-export async function POST({ locals, request }) {
+export async function POST({ locals, request, url }) {
   if (!locals.user) {
     return json({ error: 'Не авторизован' }, { status: 401 });
   }
   
   try {
-    const origin = request.headers.get('origin') || request.headers.get('referer');
+    // Получаем origin из заголовка или из URL запроса
+    let origin = request.headers.get('origin');
+    
+    if (!origin) {
+      origin = `${url.protocol}//${url.host}`;
+    }
+    
+    console.log('Passkey registration - origin:', origin);
+    
     const options = await generatePasskeyRegistrationOptions(locals.user.username, origin);
     return json({ options });
   } catch (error) {

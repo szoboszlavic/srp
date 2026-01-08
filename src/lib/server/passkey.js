@@ -17,6 +17,21 @@ const DEFAULT_RPID = 'localhost';
 const DEFAULT_ORIGIN = 'https://localhost:5173';
 
 /**
+ * Конвертирует base64 в base64url (для совместимости с Edge Runtime)
+ */
+function base64ToBase64Url(base64) {
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+/**
+ * Конвертирует ArrayBuffer/Uint8Array в base64url строку
+ */
+function bufferToBase64Url(buffer) {
+  const base64 = Buffer.from(buffer).toString('base64');
+  return base64ToBase64Url(base64);
+}
+
+/**
  * Генерирует опции для регистрации нового passkey
  * @param {string} username 
  * @param {string} requestOrigin - Origin запроса
@@ -91,7 +106,7 @@ export async function verifyPasskeyRegistration(username, response, requestOrigi
     
     // Сохраняем credential в Redis
     const passkeyData = {
-      credentialID: Buffer.from(credential.id).toString('base64url'),
+      credentialID: bufferToBase64Url(credential.id),
       credentialPublicKey: Buffer.from(credential.publicKey).toString('base64'),
       counter: credential.counter,
       transports: response.response.transports || [],

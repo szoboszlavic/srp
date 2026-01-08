@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { generatePasskeyAuthenticationOptions } from '$lib/server/passkey.js';
 
-export async function POST({ request }) {
+export async function POST({ request, url }) {
   try {
     const { username } = await request.json();
     
@@ -9,7 +9,15 @@ export async function POST({ request }) {
       return json({ error: 'Не указано имя пользователя' }, { status: 400 });
     }
     
-    const origin = request.headers.get('origin') || request.headers.get('referer');
+    // Получаем origin из заголовка или из URL запроса
+    let origin = request.headers.get('origin');
+    
+    if (!origin) {
+      origin = `${url.protocol}//${url.host}`;
+    }
+    
+    console.log('Passkey auth options - origin:', origin);
+    
     const result = await generatePasskeyAuthenticationOptions(username, origin);
     
     if (result.error) {
