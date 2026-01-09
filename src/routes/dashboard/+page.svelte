@@ -161,81 +161,16 @@
   <main class="main-content">
     <div class="welcome-section">
       <h1>Добро пожаловать, <span class="highlight">{data.user?.username}</span>!</h1>
-      <p>Вы успешно авторизованы с использованием SRP протокола</p>
-    </div>
-    
-    <div class="cards-grid">
-      <div class="card">
-        <div class="card-icon purple">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-        </div>
-        <h3>SRP Авторизация</h3>
-        <p>Ваш пароль никогда не передаётся на сервер. Используется криптографическая проверка.</p>
-      </div>
-      
-      <div class="card">
-        <div class="card-icon blue">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-        </div>
-        <h3>CSP Защита</h3>
-        <p>Content Security Policy с nonce-токенами защищает от XSS атак.</p>
-      </div>
-      
-      <div class="card">
-        <div class="card-icon green">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-          </svg>
-        </div>
-        <h3>SRI Целостность</h3>
-        <p>Subresource Integrity гарантирует, что скрипты не были изменены.</p>
-      </div>
-      
-      <div class="card">
-        <div class="card-icon orange">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-          </svg>
-        </div>
-        <h3>Redis Хранилище</h3>
-        <p>Быстрое и безопасное хранение сессий в Redis (Upstash).</p>
-      </div>
+      <p>Вы успешно авторизованы</p>
     </div>
     
     <div class="dashboard-grid">
-      <div class="session-info">
-        <h2>Информация о текущей сессии</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">Пользователь</span>
-            <span class="info-value">{data.user?.username}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Статус</span>
-            <span class="info-value status-active">Активен</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Метод авторизации</span>
-            <span class="info-value">SRP-6a (2048-bit)</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Защита</span>
-            <span class="info-value">CSP + SRI + HttpOnly Cookie</span>
-          </div>
-        </div>
-      </div>
-      
       <div class="sessions-list-container">
         <div class="sessions-header">
           <h2>Активные сессии</h2>
-          {#if sessions.length > 1}
+          {#if loadingSessions}
+            <div class="skeleton-btn"></div>
+          {:else if sessions.length > 1}
             <button 
               class="revoke-all-btn" 
               onclick={() => handleRevoke(null, true)}
@@ -250,9 +185,16 @@
         </div>
         
         {#if loadingSessions}
-          <div class="loading-state">
-            <span class="spinner"></span>
-            <p>Загрузка сессий...</p>
+          <div class="skeleton-list">
+            {#each {length: 3} as _}
+              <div class="skeleton-item">
+                <div class="skeleton-icon"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton-line skeleton-title"></div>
+                  <div class="skeleton-line skeleton-meta"></div>
+                </div>
+              </div>
+            {/each}
           </div>
         {:else if sessions.length === 0}
           <div class="empty-state">
@@ -381,9 +323,16 @@
         {/if}
         
         {#if loadingPasskeys}
-          <div class="loading-state">
-            <span class="spinner"></span>
-            <p>Загрузка passkeys...</p>
+          <div class="skeleton-list">
+            {#each {length: 2} as _}
+              <div class="skeleton-item">
+                <div class="skeleton-icon"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton-line skeleton-title"></div>
+                  <div class="skeleton-line skeleton-meta"></div>
+                </div>
+              </div>
+            {/each}
           </div>
         {:else if passkeys.length === 0}
           <div class="empty-state passkey-empty">
@@ -567,95 +516,10 @@
     margin: 0;
   }
   
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-  
-  .card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1.75rem;
-    transition: all 0.3s ease;
-  }
-  
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.12);
-  }
-  
-  .card-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.25rem;
-  }
-  
-  .card-icon svg {
-    width: 24px;
-    height: 24px;
-    color: #fff;
-  }
-  
-  .card-icon.purple {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
-  }
-  
-  .card-icon.blue {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
-  }
-  
-  .card-icon.green {
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    box-shadow: 0 8px 20px rgba(34, 197, 94, 0.25);
-  }
-  
-  .card-icon.orange {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.25);
-  }
-  
-  .card h3 {
-    color: #fff;
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 0.5rem;
-  }
-  
-  .card p {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.9rem;
-    margin: 0;
-    line-height: 1.5;
-  }
-  
   .dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
-  }
-  
-  @media (min-width: 900px) {
-    .dashboard-grid {
-      grid-template-columns: 350px 1fr;
-    }
-  }
-
-  .session-info {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 2rem;
-    height: fit-content;
   }
   
   .sessions-list-container {
@@ -681,6 +545,82 @@
     margin: 0;
   }
   
+  /* Skeleton Loader */
+  .skeleton-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .skeleton-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+  }
+  
+  .skeleton-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      rgba(255, 255, 255, 0.05) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    flex-shrink: 0;
+  }
+  
+  .skeleton-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .skeleton-line {
+    border-radius: 4px;
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      rgba(255, 255, 255, 0.05) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  
+  .skeleton-title {
+    width: 35%;
+    min-width: 120px;
+    height: 18px;
+  }
+  
+  .skeleton-meta {
+    width: 55%;
+    min-width: 200px;
+    height: 14px;
+  }
+  
+  .skeleton-btn {
+    width: 220px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      rgba(255, 255, 255, 0.05) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
   /* Стили сессий */
   .sessions-list {
     display: flex;
@@ -1201,12 +1141,7 @@
       padding-right: 2.5rem;
     }
     
-    .info-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
     
-    .session-info h2,
     .sessions-header h2 {
       font-size: 1.1rem;
     }

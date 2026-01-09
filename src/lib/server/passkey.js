@@ -316,6 +316,7 @@ export async function deletePasskey(username, credentialID) {
 
 /**
  * Вспомогательная функция для получения rpID из origin
+ * Для localhost поддерживаем как http так и https (dev режим)
  */
 function getConfigFromOrigin(origin) {
   if (!origin) {
@@ -324,8 +325,24 @@ function getConfigFromOrigin(origin) {
   
   try {
     const url = new URL(origin);
+    const hostname = url.hostname;
+    
+    // Для localhost и 127.0.0.1 поддерживаем оба протокола
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      // WebAuthn работает на localhost через любой протокол
+      // Возвращаем массив допустимых origins для verifyRegistrationResponse/verifyAuthenticationResponse
+      const port = url.port ? `:${url.port}` : '';
+      return { 
+        rpID: hostname, 
+        expectedOrigin: [
+          `http://${hostname}${port}`,
+          `https://${hostname}${port}`
+        ]
+      };
+    }
+    
     return { 
-      rpID: url.hostname, 
+      rpID: hostname, 
       expectedOrigin: origin 
     };
   } catch {
