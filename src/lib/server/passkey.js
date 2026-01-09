@@ -104,9 +104,19 @@ export async function verifyPasskeyRegistration(username, response, requestOrigi
     
     const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
     
+    // credential.id может быть строкой (base64url) или Uint8Array в зависимости от версии библиотеки
+    let credentialID;
+    if (typeof credential.id === 'string') {
+      credentialID = credential.id;
+    } else {
+      credentialID = bufferToBase64Url(credential.id);
+    }
+    
+    console.log('Registration - saving credential ID:', credentialID);
+    
     // Сохраняем credential в Redis
     const passkeyData = {
-      credentialID: bufferToBase64Url(credential.id),
+      credentialID: credentialID,
       credentialPublicKey: Buffer.from(credential.publicKey).toString('base64'),
       counter: credential.counter,
       transports: response.response.transports || [],
@@ -201,9 +211,17 @@ export async function verifyPasskeyAuthentication(username, response, requestOri
   const passkeys = await getUserPasskeys(username);
   const credentialID = response.id;
   
-  const passkey = passkeys.find(p => p.credentialID === credentialID);
+  console.log('Auth - looking for credential ID:', credentialID);
+  console.log('Auth - available passkeys:', passkeys.map(p => p.credentialID));
+  
+  // Нормализуем ID для сравнения (убираем возможные различия в padding)
+  const normalizeId = (id) => id.replace(/=/g, '');
+  const normalizedCredentialID = normalizeId(credentialID);
+  
+  const passkey = passkeys.find(p => normalizeId(p.credentialID) === normalizedCredentialID);
   
   if (!passkey) {
+    console.error('Passkey not found. Searched:', normalizedCredentialID);
     return { success: false, error: 'Passkey не найден' };
   }
   
